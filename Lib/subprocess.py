@@ -736,6 +736,8 @@ class Popen(object):
 
       startupinfo and creationflags (Windows only)
 
+      force_hide (Windows only)
+
       restore_signals (POSIX only)
 
       start_new_session (POSIX only)
@@ -765,7 +767,8 @@ class Popen(object):
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
                  pass_fds=(), *, user=None, group=None, extra_groups=None,
-                 encoding=None, errors=None, text=None, umask=-1):
+                 encoding=None, errors=None, text=None, umask=-1,
+                 force_hide=False):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -961,7 +964,8 @@ class Popen(object):
                                 errread, errwrite,
                                 restore_signals,
                                 gid, gids, uid, umask,
-                                start_new_session)
+                                start_new_session,
+                                force_hide)
         except:
             # Cleanup if the child failed starting.
             for f in filter(None, (self.stdin, self.stdout, self.stderr)):
@@ -1354,7 +1358,8 @@ class Popen(object):
                            unused_restore_signals,
                            unused_gid, unused_gids, unused_uid,
                            unused_umask,
-                           unused_start_new_session):
+                           unused_start_new_session,
+                           force_hide):
             """Execute program (MS Windows version)"""
 
             assert not pass_fds, "pass_fds not supported on Windows."
@@ -1418,9 +1423,10 @@ class Popen(object):
                     # the ones in the handle_list
                     close_fds = False
 
-            if shell:
+            if force_hide or shell:
                 startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
                 startupinfo.wShowWindow = _winapi.SW_HIDE
+            if shell:
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = '{} /c "{}"'.format (comspec, args)
 
@@ -1682,7 +1688,8 @@ class Popen(object):
                            errread, errwrite,
                            restore_signals,
                            gid, gids, uid, umask,
-                           start_new_session):
+                           start_new_session,
+                           unused_force_hide):
             """Execute program (POSIX version)"""
 
             if isinstance(args, (str, bytes)):
